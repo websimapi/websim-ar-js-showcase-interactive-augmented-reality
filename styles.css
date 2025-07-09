@@ -48,15 +48,6 @@ a-scene {
     pointer-events: auto;
 }
 
-.header h1 {
-    font-size: 24px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #FF6B6B, #4ECDC4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
 .header-buttons {
     display: flex;
     gap: 10px;

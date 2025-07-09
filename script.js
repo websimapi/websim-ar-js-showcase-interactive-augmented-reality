@@ -1,52 +1,58 @@
-// AR.js Showcase JavaScript
+// AR.js Showcase JavaScript - Simplified and Safer Version
 let trackingStatus = false;
 let markerCount = 0;
 let isInfoPanelOpen = false;
-let isGPSMode = false;
-let gpsInitialized = false;
 
 // DOM elements
-let loadingScreen, infoPanel, trackingStatusElement, markerCountElement, arModeElement, gpsStatusElement, gpsStatusItem, modeToggleBtn;
+let loadingScreen, infoPanel, trackingStatusElement, markerCountElement;
 
-// Initialize the app
-document.addEventListener('DOMContentLoaded', function() {
+// Safe DOM access function
+function safeGetElement(id) {
     try {
-        console.log('Starting AR.js initialization...');
-        initializeDOM();
-        setupEventListeners();
-        initializeAR();
-        checkGeolocationSupport();
-        console.log('AR.js initialization complete');
-    } catch (error) {
-        console.error('Initialization error:', error);
-        handleError('Failed to initialize AR application', error);
-    }
-});
-
-function initializeDOM() {
-    try {
-        // Safely get DOM elements with fallbacks
-        loadingScreen = document.getElementById('loading-screen');
-        infoPanel = document.getElementById('info-panel');
-        trackingStatusElement = document.getElementById('tracking-status');
-        markerCountElement = document.getElementById('marker-count');
-        arModeElement = document.getElementById('ar-mode');
-        gpsStatusElement = document.getElementById('gps-status');
-        gpsStatusItem = document.getElementById('gps-status-item');
-        modeToggleBtn = document.getElementById('mode-toggle');
-        
-        console.log('DOM elements initialized successfully');
-    } catch (error) {
-        console.error('DOM initialization error:', error);
-        throw error;
+        return document.getElementById(id);
+    } catch (e) {
+        console.warn(`Element ${id} not found:`, e);
+        return null;
     }
 }
 
+// Safe event listener function
+function safeAddEventListener(element, event, handler) {
+    try {
+        if (element && typeof element.addEventListener === 'function') {
+            element.addEventListener(event, handler);
+            return true;
+        }
+    } catch (e) {
+        console.warn(`Failed to add event listener:`, e);
+    }
+    return false;
+}
+
+// Initialize DOM elements safely
+function initializeDOM() {
+    try {
+        console.log('Initializing DOM elements...');
+        
+        loadingScreen = safeGetElement('loading-screen');
+        infoPanel = safeGetElement('info-panel');
+        trackingStatusElement = safeGetElement('tracking-status');
+        markerCountElement = safeGetElement('marker-count');
+        
+        console.log('DOM elements initialized');
+        return true;
+    } catch (error) {
+        console.error('DOM initialization failed:', error);
+        return false;
+    }
+}
+
+// Initialize AR scene
 function initializeAR() {
     try {
-        console.log('Initializing AR...');
+        console.log('Initializing AR scene...');
         
-        // Hide loading screen after delay
+        // Hide loading screen
         setTimeout(() => {
             if (loadingScreen) {
                 loadingScreen.style.opacity = '0';
@@ -56,39 +62,53 @@ function initializeAR() {
             }
         }, 2000);
 
-        // Wait for AR scene to be ready
-        const scene = document.querySelector('a-scene');
-        if (!scene) {
-            console.warn('AR scene not found, AR features may not work');
-            return;
+        // Wait for A-Frame to be ready
+        if (typeof AFRAME !== 'undefined') {
+            console.log('A-Frame is ready');
+            setupARListeners();
+        } else {
+            console.warn('A-Frame not loaded, retrying...');
+            setTimeout(initializeAR, 1000);
         }
         
-        // Set up AR event listeners
-        scene.addEventListener('loaded', function() {
-            console.log('AR scene loaded');
+    } catch (error) {
+        console.error('AR initialization error:', error);
+        updateStatus('AR Error', 'error');
+    }
+}
+
+// Setup AR event listeners
+function setupARListeners() {
+    try {
+        const scene = document.querySelector('a-scene');
+        
+        if (!scene) {
+            console.warn('AR scene not found');
+            return;
+        }
+
+        // Scene loaded event
+        safeAddEventListener(scene, 'loaded', function() {
+            console.log('AR scene loaded successfully');
             updateStatus('Ready', 'success');
         });
 
-        scene.addEventListener('renderstart', function() {
-            console.log('AR rendering started');
-        });
-
-        // Listen for marker events with better error handling
+        // Setup marker detection
         setTimeout(() => {
             const markers = document.querySelectorAll('a-marker');
-            console.log(`Found ${markers.length} markers`);
+            console.log(`Setting up ${markers.length} markers`);
             
             markers.forEach((marker, index) => {
                 if (marker) {
-                    marker.addEventListener('markerFound', function() {
-                        console.log(`Marker ${index + 1} found`);
+                    safeAddEventListener(marker, 'markerFound', function() {
+                        console.log(`Marker ${index + 1} detected`);
                         markerCount++;
                         updateMarkerCount();
                         updateStatus('Tracking', 'success');
                         trackingStatus = true;
                     });
 
-                    marker.addEventListener('markerLost', function() {
+                    safeAddEventListener(marker, 'markerLost', function() {
                         console.log(`Marker ${index + 1} lost`);
                         markerCount = Math.max(0, markerCount - 1);
                         updateMarkerCount();
@@ -101,179 +121,13 @@ function initializeAR() {
             });
         }, 1000);
         
-        console.log('AR initialization complete');
     } catch (error) {
-        console.error('AR initialization error:', error);
-        handleError('Failed to initialize AR', error);
+        console.error('AR listeners setup error:', error);
+        updateStatus('Setup Error', 'error');
     }
 }
 
-function checkGeolocationSupport() {
-    try {
-        if (typeof navigator !== 'undefined' && "geolocation" in navigator) {
-            console.log("Geolocation is supported");
-            updateGPSStatus('Available', 'success');
-        } else {
-            console.log("Geolocation is not supported");
-            updateGPSStatus('Not Supported', 'error');
-            if (modeToggleBtn) {
-                modeToggleBtn.disabled = true;
-            }
-        }
-    } catch (error) {
-        console.error('Geolocation check error:', error);
-        updateGPSStatus('Error', 'error');
-    }
-}
-
-function initializeGPS() {
-    if (gpsInitialized || typeof navigator === 'undefined') return;
-    
-    try {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                console.log('GPS position obtained:', position.coords);
-                updateGPSStatus('Active', 'success');
-                gpsInitialized = true;
-                
-                // Add GPS camera component safely
-                const camera = document.querySelector('#camera-entity');
-                if (camera) {
-                    camera.setAttribute('gps-camera', 'simulateLatitude: ' + position.coords.latitude + '; simulateLongitude: ' + position.coords.longitude);
-                }
-                
-                // Enable GPS markers safely
-                const gpsMarkers = document.querySelector('#gps-markers');
-                if (gpsMarkers) {
-                    gpsMarkers.setAttribute('visible', 'true');
-                }
-                
-                console.log('GPS AR mode initialized');
-            },
-            (error) => {
-                console.error('GPS error:', error);
-                updateGPSStatus('Error', 'error');
-                
-                // Fallback to simulated GPS for demo
-                const camera = document.querySelector('#camera-entity');
-                if (camera) {
-                    camera.setAttribute('gps-camera', 'simulateLatitude: 37.7749; simulateLongitude: -122.4194');
-                }
-                
-                const gpsMarkers = document.querySelector('#gps-markers');
-                if (gpsMarkers) {
-                    gpsMarkers.setAttribute('visible', 'true');
-                }
-                
-                updateGPSStatus('Simulated', 'warning');
-                gpsInitialized = true;
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 60000
-            }
-        );
-    } catch (error) {
-        console.error('GPS initialization error:', error);
-        updateGPSStatus('Error', 'error');
-        handleError('Failed to initialize GPS', error);
-    }
-}
-
-function toggleARMode() {
-    try {
-        const scene = document.querySelector('a-scene');
-        const camera = document.querySelector('#camera-entity');
-        const gpsMarkers = document.querySelector('#gps-markers');
-        const markers = document.querySelectorAll('a-marker');
-        
-        if (!scene || !camera) {
-            console.warn('Required AR elements not found');
-            return;
-        }
-        
-        if (!isGPSMode) {
-            // Switch to GPS mode
-            isGPSMode = true;
-            if (modeToggleBtn) modeToggleBtn.textContent = '🖼️ Marker';
-            if (arModeElement) arModeElement.textContent = 'GPS';
-            if (gpsStatusItem) gpsStatusItem.style.display = 'flex';
-            
-            // Hide pattern markers
-            markers.forEach(marker => {
-                if (marker) marker.setAttribute('visible', 'false');
-            });
-            
-            // Initialize GPS if not already done
-            if (!gpsInitialized) {
-                initializeGPS();
-            } else if (gpsMarkers) {
-                gpsMarkers.setAttribute('visible', 'true');
-            }
-            
-            updateStatus('GPS Mode', 'success');
-            console.log('Switched to GPS mode');
-        } else {
-            // Switch back to marker mode
-            isGPSMode = false;
-            if (modeToggleBtn) modeToggleBtn.textContent = '📍 GPS';
-            if (arModeElement) arModeElement.textContent = 'Marker';
-            if (gpsStatusItem) gpsStatusItem.style.display = 'none';
-            
-            // Show pattern markers
-            markers.forEach(marker => {
-                if (marker) marker.setAttribute('visible', 'true');
-            });
-            
-            // Hide GPS markers
-            if (gpsMarkers) {
-                gpsMarkers.setAttribute('visible', 'false');
-            }
-            
-            // Remove GPS camera component
-            if (camera.hasAttribute('gps-camera')) {
-                camera.removeAttribute('gps-camera');
-            }
-            
-            updateStatus('Marker Mode', 'success');
-            console.log('Switched to marker mode');
-        }
-    } catch (error) {
-        console.error('Mode toggle error:', error);
-        handleError('Failed to toggle AR mode', error);
-    }
-}
-
-function setupEventListeners() {
-    try {
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            console.log('Window resized');
-        });
-
-        // Handle visibility change
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                console.log('AR paused');
-            } else {
-                console.log('AR resumed');
-            }
-        });
-
-        // Set up global click handlers
-        window.toggleARMode = toggleARMode;
-        window.toggleInfo = toggleInfo;
-        window.toggleCamera = toggleCamera;
-        window.resetTracking = resetTracking;
-        window.toggleFullscreen = toggleFullscreen;
-        
-        console.log('Event listeners setup complete');
-    } catch (error) {
-        console.error('Event listener setup error:', error);
-    }
-}
-
+// Update status display
 function updateStatus(status, type) {
     try {
         if (trackingStatusElement) {
@@ -285,21 +139,11 @@ function updateStatus(status, type) {
     }
 }
 
-function updateGPSStatus(status, type) {
-    try {
-        if (gpsStatusElement) {
-            gpsStatusElement.textContent = status;
-            gpsStatusElement.className = `status-value ${type || ''}`;
-        }
-    } catch (error) {
-        console.error('GPS status update error:', error);
-    }
-}
-
+// Update marker count display
 function updateMarkerCount() {
     try {
         if (markerCountElement) {
-            markerCountElement.textContent = markerCount;
+            markerCountElement.textContent = markerCount.toString();
             markerCountElement.style.color = markerCount > 0 ? '#4ECDC4' : '#FF6B6B';
         }
     } catch (error) {
@@ -307,10 +151,11 @@ function updateMarkerCount() {
     }
 }
 
+// Toggle info panel
 function toggleInfo() {
     try {
-        isInfoPanelOpen = !isInfoPanelOpen;
         if (infoPanel) {
+            isInfoPanelOpen = !isInfoPanelOpen;
             if (isInfoPanelOpen) {
                 infoPanel.classList.remove('hidden');
             } else {
@@ -322,12 +167,14 @@ function toggleInfo() {
     }
 }
 
+// Camera toggle with visual feedback
 function toggleCamera() {
     try {
         console.log('Camera toggle requested');
+        
         // Visual feedback
-        if (event && event.target) {
-            const btn = event.target;
+        const btn = document.querySelector('.control-btn');
+        if (btn) {
             btn.style.transform = 'scale(0.9)';
             setTimeout(() => {
                 btn.style.transform = 'scale(1)';
@@ -338,22 +185,17 @@ function toggleCamera() {
     }
 }
 
+// Reset tracking
 function resetTracking() {
     try {
-        // Reset tracking state
         markerCount = 0;
         trackingStatus = false;
         updateMarkerCount();
-        
-        if (isGPSMode) {
-            updateStatus('GPS Mode', 'success');
-        } else {
-            updateStatus('Searching...', 'warning');
-        }
+        updateStatus('Searching...', 'warning');
         
         // Visual feedback
-        if (event && event.target) {
-            const btn = event.target;
+        const btn = document.querySelector('.control-btn:nth-child(2)');
+        if (btn) {
             btn.style.transform = 'rotate(360deg)';
             setTimeout(() => {
                 btn.style.transform = 'rotate(0deg)';
@@ -366,16 +208,19 @@ function resetTracking() {
     }
 }
 
+// Toggle fullscreen
 function toggleFullscreen() {
     try {
         if (document.fullscreenElement) {
             if (document.exitFullscreen) {
-                document.exitFullscreen();
+                document.exitFullscreen().catch(err => {
+                    console.log('Fullscreen exit error:', err);
+                });
             }
         } else {
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(err => {
-                    console.log('Error attempting to enable fullscreen:', err);
+                    console.log('Fullscreen request error:', err);
                 });
             }
         }
@@ -384,56 +229,65 @@ function toggleFullscreen() {
     }
 }
 
-// Enhanced error handling
-function handleError(message, error) {
-    console.error(`${message}:`, error);
-    
-    // Update UI to show error
-    updateStatus('Error', 'error');
-    
-    // Show error in loading screen if it's still visible
+// Main initialization
+function initialize() {
     try {
-        const loadingContent = document.querySelector('.loading-content');
-        if (loadingContent && loadingScreen && loadingScreen.style.display !== 'none') {
-            loadingContent.innerHTML = `
-                <div class="loading-spinner"></div>
-                <h2>Error Loading AR</h2>
-                <p>${message}</p>
-                <p style="font-size: 12px; color: #666; margin-top: 10px;">Check console for details</p>
-            `;
+        console.log('Starting application initialization...');
+        
+        if (!initializeDOM()) {
+            throw new Error('DOM initialization failed');
         }
-    } catch (e) {
-        console.error('Error updating loading screen:', e);
+        
+        // Initialize AR after a short delay to ensure DOM is ready
+        setTimeout(() => {
+            try {
+                initializeAR();
+            } catch (error) {
+                console.error('AR initialization failed:', error);
+                updateStatus('Error', 'error');
+            }
+        }, 100);
+        
+        console.log('Application initialization complete');
+        
+    } catch (error) {
+        console.error('Main initialization error:', error);
+        
+        // Show error in loading screen
+        if (loadingScreen) {
+            const loadingContent = loadingScreen.querySelector('.loading-content');
+            if (loadingContent) {
+                loadingContent.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <h2>Initialization Error</h2>
+                    <p>Failed to start AR application</p>
+                `;
+            }
+        }
     }
 }
 
-// Global error handling
+// Global error handlers
 window.addEventListener('error', function(e) {
-    console.error('Global error:', e.error || e.message);
-    handleError('Script error occurred', e.error || e.message);
+    console.error('Global error caught:', e.message, e.error);
+    updateStatus('Error', 'error');
 });
 
 window.addEventListener('unhandledrejection', function(e) {
     console.error('Unhandled promise rejection:', e.reason);
-    handleError('Promise rejection', e.reason);
+    updateStatus('Error', 'error');
+    e.preventDefault(); // Prevent default error display
 });
 
-// Safe initialization check
-if (typeof document !== 'undefined' && document.readyState === 'loading') {
-    // Document is still loading, wait for DOMContentLoaded
-    console.log('Waiting for DOM to load...');
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
 } else {
-    // DOM is already loaded
-    console.log('DOM already loaded, initializing immediately...');
-    setTimeout(() => {
-        try {
-            initializeDOM();
-            setupEventListeners();
-            initializeAR();
-            checkGeolocationSupport();
-        } catch (error) {
-            console.error('Immediate initialization error:', error);
-            handleError('Failed to initialize AR application', error);
-        }
-    }, 100);
+    initialize();
 }
+
+// Make functions globally available
+window.toggleInfo = toggleInfo;
+window.toggleCamera = toggleCamera;
+window.resetTracking = resetTracking;
+window.toggleFullscreen = toggleFullscreen;
