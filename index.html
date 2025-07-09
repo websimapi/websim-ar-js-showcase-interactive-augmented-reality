@@ -18,7 +18,8 @@
         smooth="true"
         smoothCount="10"
         smoothTolerance=".01"
-        smoothThreshold="5">
+        smoothThreshold="5"
+        gps-entity-place="enabled: true">
         
         <!-- Assets -->
         <a-assets>
@@ -26,7 +27,7 @@
             <a-asset-item id="duck-model" src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf"></a-asset-item>
         </a-assets>
 
-        <!-- Marker 1: Spinning Cube -->
+        <!-- Marker-based AR entities -->
         <a-marker preset="hiro">
             <a-box
                 position="0 0.5 0"
@@ -43,7 +44,6 @@
             <a-light type="point" intensity="0.5" color="#FFF" position="0 2 0"></a-light>
         </a-marker>
 
-        <!-- Marker 2: 3D Model -->
         <a-marker preset="kanji">
             <a-entity
                 gltf-model="#duck-model"
@@ -60,7 +60,6 @@
             </a-cylinder>
         </a-marker>
 
-        <!-- Marker 3: Letter A -->
         <a-marker preset="letter-a">
             <a-sphere
                 position="0 0.5 0"
@@ -84,7 +83,6 @@
             </a-text>
         </a-marker>
 
-        <!-- Marker 4: Letter B -->
         <a-marker preset="letter-b">
             <a-entity id="particles">
                 <a-sphere
@@ -114,8 +112,62 @@
             </a-entity>
         </a-marker>
 
+        <!-- GPS-based AR entities (for demo purposes using relative positions) -->
+        <a-box
+            id="gps-box"
+            position="0 0 -10"
+            material="color: #FFD93D; metalness: 0.3; roughness: 0.2"
+            animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"
+            visible="false">
+            <a-text
+                value="GPS Demo"
+                position="0 1.5 0"
+                align="center"
+                color="#FFFFFF"
+                scale="1 1 1">
+            </a-text>
+        </a-box>
+
+        <a-sphere
+            id="gps-sphere"
+            position="5 0 -8"
+            radius="0.5"
+            material="color: #96CEB4; emissive: #96CEB4; emissiveIntensity: 0.3"
+            animation="property: position; to: 5 2 -8; dir: alternate; loop: true; dur: 3000"
+            visible="false">
+            <a-text
+                value="Location A"
+                position="0 1 0"
+                align="center"
+                color="#FFFFFF"
+                scale="0.8 0.8 0.8">
+            </a-text>
+        </a-sphere>
+
+        <a-cylinder
+            id="gps-cylinder"
+            position="-5 0 -12"
+            radius="0.3"
+            height="2"
+            material="color: #FF6B6B; opacity: 0.8"
+            animation="property: rotation; to: 0 -360 0; loop: true; dur: 4000"
+            visible="false">
+            <a-text
+                value="Location B"
+                position="0 1.5 0"
+                align="center"
+                color="#FFFFFF"
+                scale="0.7 0.7 0.7">
+            </a-text>
+        </a-cylinder>
+
         <!-- Camera -->
-        <a-entity camera look-controls wasd-controls></a-entity>
+        <a-camera 
+            look-controls="enabled: true" 
+            wasd-controls="enabled: true"
+            gps-camera="enabled: false"
+            rotation-reader>
+        </a-camera>
     </a-scene>
 
     <!-- UI Overlay -->
@@ -128,6 +180,7 @@
         </div>
         
         <div class="controls">
+            <button class="control-btn" onclick="toggleARMode()">🌍</button>
             <button class="control-btn" onclick="toggleCamera()">📷</button>
             <button class="control-btn" onclick="resetTracking()">🔄</button>
             <button class="control-btn" onclick="toggleFullscreen()">⛶</button>
@@ -137,6 +190,10 @@
             <div class="status-item">
                 <span class="status-label">Mode:</span>
                 <span id="ar-mode" class="status-value">Marker</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">GPS:</span>
+                <span id="gps-status" class="status-value">Disabled</span>
             </div>
             <div class="status-item">
                 <span class="status-label">Tracking:</span>
@@ -167,6 +224,9 @@
                 <div class="marker-item">
                     <strong>Letter B Marker:</strong> Animated particle effects
                 </div>
+                <div class="marker-item">
+                    <strong>GPS Mode:</strong> Location-based AR content (simulated)
+                </div>
             </div>
             <div class="instructions">
                 <h3>Instructions:</h3>
@@ -175,6 +235,8 @@
                     <li>Point your camera at AR markers</li>
                     <li>Keep markers in view for best tracking</li>
                     <li>Use good lighting for optimal results</li>
+                    <li>Toggle GPS mode to see location-based content</li>
+                    <li>GPS mode shows simulated location-based objects</li>
                 </ul>
             </div>
             <button class="close-btn" onclick="toggleInfo()">Close</button>

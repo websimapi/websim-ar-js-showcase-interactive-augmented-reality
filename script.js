@@ -1,10 +1,12 @@
-// AR.js Showcase JavaScript - Simplified and Safer Version
+// AR.js Showcase JavaScript - Enhanced with GPS support
 let trackingStatus = false;
 let markerCount = 0;
 let isInfoPanelOpen = false;
+let isGPSMode = false;
+let gpsSupported = false;
 
 // DOM elements
-let loadingScreen, infoPanel, trackingStatusElement, markerCountElement;
+let loadingScreen, infoPanel, trackingStatusElement, markerCountElement, arModeElement, gpsStatusElement;
 
 // Safe DOM access function
 function safeGetElement(id) {
@@ -38,6 +40,8 @@ function initializeDOM() {
         infoPanel = safeGetElement('info-panel');
         trackingStatusElement = safeGetElement('tracking-status');
         markerCountElement = safeGetElement('marker-count');
+        arModeElement = safeGetElement('ar-mode');
+        gpsStatusElement = safeGetElement('gps-status');
         
         console.log('DOM elements initialized');
         return true;
@@ -47,10 +51,127 @@ function initializeDOM() {
     }
 }
 
+// Check GPS support
+function checkGPSSupport() {
+    try {
+        if (navigator.geolocation) {
+            gpsSupported = true;
+            console.log('GPS is supported');
+            updateGPSStatus('Available', 'success');
+        } else {
+            gpsSupported = false;
+            console.log('GPS is not supported');
+            updateGPSStatus('Not Available', 'error');
+        }
+    } catch (error) {
+        console.error('GPS check error:', error);
+        gpsSupported = false;
+        updateGPSStatus('Error', 'error');
+    }
+}
+
+// Toggle AR mode between marker and GPS
+function toggleARMode() {
+    try {
+        if (!gpsSupported) {
+            console.log('GPS not supported, staying in marker mode');
+            return;
+        }
+
+        isGPSMode = !isGPSMode;
+        
+        if (isGPSMode) {
+            // Switch to GPS mode
+            updateARMode('GPS', 'success');
+            updateGPSStatus('Active', 'success');
+            showGPSEntities();
+            console.log('Switched to GPS mode');
+        } else {
+            // Switch to Marker mode
+            updateARMode('Marker', 'success');
+            updateGPSStatus('Available', 'warning');
+            hideGPSEntities();
+            console.log('Switched to Marker mode');
+        }
+        
+        // Visual feedback
+        const btn = document.querySelector('.control-btn');
+        if (btn) {
+            btn.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                btn.style.transform = 'scale(1)';
+            }, 150);
+        }
+        
+    } catch (error) {
+        console.error('AR mode toggle error:', error);
+        updateARMode('Error', 'error');
+    }
+}
+
+// Show GPS entities
+function showGPSEntities() {
+    try {
+        const gpsEntities = ['gps-box', 'gps-sphere', 'gps-cylinder'];
+        gpsEntities.forEach(id => {
+            const entity = safeGetElement(id);
+            if (entity) {
+                entity.setAttribute('visible', 'true');
+                console.log(`Showing GPS entity: ${id}`);
+            }
+        });
+    } catch (error) {
+        console.error('Error showing GPS entities:', error);
+    }
+}
+
+// Hide GPS entities
+function hideGPSEntities() {
+    try {
+        const gpsEntities = ['gps-box', 'gps-sphere', 'gps-cylinder'];
+        gpsEntities.forEach(id => {
+            const entity = safeGetElement(id);
+            if (entity) {
+                entity.setAttribute('visible', 'false');
+                console.log(`Hiding GPS entity: ${id}`);
+            }
+        });
+    } catch (error) {
+        console.error('Error hiding GPS entities:', error);
+    }
+}
+
+// Update AR mode display
+function updateARMode(mode, type) {
+    try {
+        if (arModeElement) {
+            arModeElement.textContent = mode;
+            arModeElement.className = `status-value ${type || ''}`;
+        }
+    } catch (error) {
+        console.error('AR mode update error:', error);
+    }
+}
+
+// Update GPS status display
+function updateGPSStatus(status, type) {
+    try {
+        if (gpsStatusElement) {
+            gpsStatusElement.textContent = status;
+            gpsStatusElement.className = `status-value ${type || ''}`;
+        }
+    } catch (error) {
+        console.error('GPS status update error:', error);
+    }
+}
+
 // Initialize AR scene
 function initializeAR() {
     try {
         console.log('Initializing AR scene...');
+        
+        // Check GPS support
+        checkGPSSupport();
         
         // Hide loading screen
         setTimeout(() => {
@@ -173,7 +294,7 @@ function toggleCamera() {
         console.log('Camera toggle requested');
         
         // Visual feedback
-        const btn = document.querySelector('.control-btn');
+        const btn = document.querySelector('.control-btn:nth-child(2)');
         if (btn) {
             btn.style.transform = 'scale(0.9)';
             setTimeout(() => {
@@ -193,8 +314,16 @@ function resetTracking() {
         updateMarkerCount();
         updateStatus('Searching...', 'warning');
         
+        // Reset GPS entities if in GPS mode
+        if (isGPSMode) {
+            hideGPSEntities();
+            setTimeout(() => {
+                showGPSEntities();
+            }, 500);
+        }
+        
         // Visual feedback
-        const btn = document.querySelector('.control-btn:nth-child(2)');
+        const btn = document.querySelector('.control-btn:nth-child(3)');
         if (btn) {
             btn.style.transform = 'rotate(360deg)';
             setTimeout(() => {
@@ -291,3 +420,4 @@ window.toggleInfo = toggleInfo;
 window.toggleCamera = toggleCamera;
 window.resetTracking = resetTracking;
 window.toggleFullscreen = toggleFullscreen;
+window.toggleARMode = toggleARMode;
