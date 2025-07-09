@@ -60,49 +60,49 @@
             </a-cylinder>
         </a-marker>
 
-        <!-- Marker 3: Interactive Scene -->
-        <a-marker type="pattern" url="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/patt.letterA">
+        <!-- Marker 3: Interactive Scene (Additional content on Hiro) -->
+        <a-marker preset="hiro">
             <a-sphere
-                position="0 0.5 0"
+                position="1 0.5 0"
                 radius="0.3"
                 material="color: #45B7D1; shader: standard; metalness: 0.3"
-                animation="property: position; to: 0 1.5 0; dir: alternate; loop: true; dur: 2000">
+                animation="property: position; to: 1 1.5 0; dir: alternate; loop: true; dur: 2000">
             </a-sphere>
             <a-torus
-                position="0 0.5 0"
+                position="1 0.5 0"
                 radius="0.5"
                 radius-tubular="0.1"
                 material="color: #96CEB4; opacity: 0.7"
                 animation="property: rotation; to: 360 0 0; loop: true; dur: 3000">
             </a-torus>
             <a-text
-                value="Interactive AR"
-                position="0 -0.5 0"
+                value="Multi-Object"
+                position="1 -0.5 0"
                 align="center"
                 color="#FFFFFF"
                 scale="0.6 0.6 0.6">
             </a-text>
         </a-marker>
 
-        <!-- Marker 4: Particle Effect -->
-        <a-marker type="pattern" url="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/patt.letterB">
+        <!-- Marker 4: Particle Effect (Additional content on Kanji) -->
+        <a-marker preset="kanji">
             <a-entity id="particles">
                 <a-sphere
-                    position="0 0.5 0"
+                    position="1 0.5 0"
                     radius="0.1"
                     material="color: #FFD93D; emissive: #FFD93D; emissiveIntensity: 0.5">
                 </a-sphere>
                 <a-sphere
-                    position="0.3 0.8 0"
+                    position="1.3 0.8 0"
                     radius="0.08"
                     material="color: #FF6B6B; emissive: #FF6B6B; emissiveIntensity: 0.3"
-                    animation="property: position; to: -0.3 1.2 0; dir: alternate; loop: true; dur: 1500">
+                    animation="property: position; to: 0.7 1.2 0; dir: alternate; loop: true; dur: 1500">
                 </a-sphere>
                 <a-sphere
-                    position="-0.3 0.8 0"
+                    position="0.7 0.8 0"
                     radius="0.08"
                     material="color: #4ECDC4; emissive: #4ECDC4; emissiveIntensity: 0.3"
-                    animation="property: position; to: 0.3 1.2 0; dir: alternate; loop: true; dur: 1800">
+                    animation="property: position; to: 1.3 1.2 0; dir: alternate; loop: true; dur: 1800">
                 </a-sphere>
             </a-entity>
         </a-marker>
@@ -143,16 +143,10 @@
             <div class="marker-info">
                 <h3>Available Markers:</h3>
                 <div class="marker-item">
-                    <strong>Hiro Marker:</strong> Spinning cube with text
+                    <strong>Hiro Marker:</strong> Spinning cube with text + interactive spheres
                 </div>
                 <div class="marker-item">
-                    <strong>Kanji Marker:</strong> 3D duck model on rotating platform
-                </div>
-                <div class="marker-item">
-                    <strong>Letter A:</strong> Interactive sphere with torus
-                </div>
-                <div class="marker-item">
-                    <strong>Letter B:</strong> Particle effect animation
+                    <strong>Kanji Marker:</strong> 3D duck model on rotating platform + particle effects
                 </div>
             </div>
             <div class="instructions">
@@ -181,4 +175,3 @@
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
-
