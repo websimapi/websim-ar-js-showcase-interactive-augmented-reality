@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR.js Showcase - Interactive Augmented Reality</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+</head>
+<body>
+    <!-- AR Scene -->
+    <a-scene
+        vr-mode-ui="enabled: false"
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        renderer="logarithmicDepthBuffer: true; precision: medium;"
+        smooth="true"
+        smoothCount="10"
+        smoothTolerance=".01"
+        smoothThreshold="5">
+        
+        <!-- Assets -->
+        <a-assets>
+            <a-asset-item id="cube-model" src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF/Box.gltf"></a-asset-item>
+            <a-asset-item id="duck-model" src="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Duck/glTF/Duck.gltf"></a-asset-item>
+        </a-assets>
+
+        <!-- Marker 1: Spinning Cube -->
+        <a-marker preset="hiro">
+            <a-box
+                position="0 0.5 0"
+                material="color: #FF6B6B; metalness: 0.2; roughness: 0.3"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 4000">
+                <a-text
+                    value="AR Cube"
+                    position="0 1.2 0"
+                    align="center"
+                    color="#FFFFFF"
+                    scale="0.8 0.8 0.8">
+                </a-text>
+            </a-box>
+            <a-light type="point" intensity="0.5" color="#FFF" position="0 2 0"></a-light>
+        </a-marker>
+
+        <!-- Marker 2: 3D Model -->
+        <a-marker preset="kanji">
+            <a-entity
+                gltf-model="#duck-model"
+                position="0 0 0"
+                scale="0.1 0.1 0.1"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 6000">
+            </a-entity>
+            <a-cylinder
+                position="0 -0.1 0"
+                radius="0.5"
+                height="0.1"
+                material="color: #4ECDC4; opacity: 0.8"
+                animation="property: rotation; to: 0 -360 0; loop: true; dur: 8000">
+            </a-cylinder>
+        </a-marker>
+
+        <!-- Marker 3: Interactive Scene -->
+        <a-marker type="pattern" url="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/patt.letterA">
+            <a-sphere
+                position="0 0.5 0"
+                radius="0.3"
+                material="color: #45B7D1; shader: standard; metalness: 0.3"
+                animation="property: position; to: 0 1.5 0; dir: alternate; loop: true; dur: 2000">
+            </a-sphere>
+            <a-torus
+                position="0 0.5 0"
+                radius="0.5"
+                radius-tubular="0.1"
+                material="color: #96CEB4; opacity: 0.7"
+                animation="property: rotation; to: 360 0 0; loop: true; dur: 3000">
+            </a-torus>
+            <a-text
+                value="Interactive AR"
+                position="0 -0.5 0"
+                align="center"
+                color="#FFFFFF"
+                scale="0.6 0.6 0.6">
+            </a-text>
+        </a-marker>
+
+        <!-- Marker 4: Particle Effect -->
+        <a-marker type="pattern" url="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/data/patt.letterB">
+            <a-entity id="particles">
+                <a-sphere
+                    position="0 0.5 0"
+                    radius="0.1"
+                    material="color: #FFD93D; emissive: #FFD93D; emissiveIntensity: 0.5">
+                </a-sphere>
+                <a-sphere
+                    position="0.3 0.8 0"
+                    radius="0.08"
+                    material="color: #FF6B6B; emissive: #FF6B6B; emissiveIntensity: 0.3"
+                    animation="property: position; to: -0.3 1.2 0; dir: alternate; loop: true; dur: 1500">
+                </a-sphere>
+                <a-sphere
+                    position="-0.3 0.8 0"
+                    radius="0.08"
+                    material="color: #4ECDC4; emissive: #4ECDC4; emissiveIntensity: 0.3"
+                    animation="property: position; to: 0.3 1.2 0; dir: alternate; loop: true; dur: 1800">
+                </a-sphere>
+            </a-entity>
+        </a-marker>
+
+        <!-- Camera -->
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <!-- UI Overlay -->
+    <div class="ui-overlay">
+        <div class="header">
+            <h1>AR.js Showcase</h1>
+            <button class="info-btn" onclick="toggleInfo()">ℹ️</button>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" onclick="toggleCamera()">📷</button>
+            <button class="control-btn" onclick="resetTracking()">🔄</button>
+            <button class="control-btn" onclick="toggleFullscreen()">⛶</button>
+        </div>
+        
+        <div class="status">
+            <div class="status-item">
+                <span class="status-label">Tracking:</span>
+                <span id="tracking-status" class="status-value">Searching...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Markers:</span>
+                <span id="marker-count" class="status-value">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div id="info-panel" class="info-panel hidden">
+        <div class="info-content">
+            <h2>How to Use</h2>
+            <div class="marker-info">
+                <h3>Available Markers:</h3>
+                <div class="marker-item">
+                    <strong>Hiro Marker:</strong> Spinning cube with text
+                </div>
+                <div class="marker-item">
+                    <strong>Kanji Marker:</strong> 3D duck model on rotating platform
+                </div>
+                <div class="marker-item">
+                    <strong>Letter A:</strong> Interactive sphere with torus
+                </div>
+                <div class="marker-item">
+                    <strong>Letter B:</strong> Particle effect animation
+                </div>
+            </div>
+            <div class="instructions">
+                <h3>Instructions:</h3>
+                <ul>
+                    <li>Allow camera access when prompted</li>
+                    <li>Point your camera at AR markers</li>
+                    <li>Keep markers in view for best tracking</li>
+                    <li>Use good lighting for optimal results</li>
+                </ul>
+            </div>
+            <button class="close-btn" onclick="toggleInfo()">Close</button>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Loading AR Experience...</h2>
+            <p>Please allow camera access</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+
