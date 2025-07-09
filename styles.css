@@ -57,6 +57,35 @@ a-scene {
     background-clip: text;
 }
 
+.header-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.mode-btn {
+    background: linear-gradient(135deg, #4ECDC4, #45B7D1);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    min-width: 80px;
+}
+
+.mode-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+}
+
+.mode-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .info-btn {
     background: rgba(255, 255, 255, 0.1);
     border: none;
@@ -121,12 +150,14 @@ a-scene {
     gap: 20px;
     align-self: flex-start;
     pointer-events: auto;
+    flex-wrap: wrap;
 }
 
 .status-item {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 80px;
 }
 
 .status-label {
@@ -138,6 +169,18 @@ a-scene {
     font-size: 14px;
     font-weight: 600;
     color: #4ECDC4;
+}
+
+.status-value.success {
+    color: #4ECDC4;
+}
+
+.status-value.warning {
+    color: #FFD93D;
+}
+
+.status-value.error {
+    color: #FF6B6B;
 }
 
 /* Info Panel */
@@ -293,7 +336,17 @@ a-scene {
     }
     
     .header h1 {
-        font-size: 20px;
+        font-size: 18px;
+    }
+    
+    .header-buttons {
+        gap: 8px;
+    }
+    
+    .mode-btn {
+        font-size: 12px;
+        padding: 6px 10px;
+        min-width: 70px;
     }
     
     .controls {
@@ -324,6 +377,10 @@ a-scene {
         flex-direction: column;
         gap: 10px;
     }
+    
+    .status-item {
+        min-width: auto;
+    }
 }
 
 /* Smooth transitions */
@@ -353,4 +410,3 @@ a-scene {
     50% { opacity: 0.7; }
     100% { opacity: 1; }
 }
-

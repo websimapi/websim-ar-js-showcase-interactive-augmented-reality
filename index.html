@@ -7,13 +7,15 @@
     <link rel="stylesheet" href="styles.css">
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/three.js/build/ar-threex-location-only.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar-nft.js"></script>
 </head>
 <body>
     <!-- AR Scene -->
     <a-scene
         vr-mode-ui="enabled: false"
         embedded
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; locationBased: false;"
         renderer="logarithmicDepthBuffer: true; precision: medium;"
         smooth="true"
         smoothCount="10"
@@ -107,15 +109,113 @@
             </a-entity>
         </a-marker>
 
+        <!-- GPS-Based Markers -->
+        <a-entity id="gps-markers" visible="false">
+            <!-- GPS Marker 1: Tower - Example coordinates (adjust for your location) -->
+            <a-entity
+                gps-entity-place="latitude: 37.7749; longitude: -122.4194"
+                class="gps-marker">
+                <a-cylinder
+                    position="0 15 0"
+                    radius="2"
+                    height="30"
+                    material="color: #FF6B6B; metalness: 0.5"
+                    animation="property: rotation; to: 0 360 0; loop: true; dur: 10000">
+                </a-cylinder>
+                <a-text
+                    value="GPS Tower"
+                    position="0 35 0"
+                    align="center"
+                    color="#FFFFFF"
+                    scale="5 5 5">
+                </a-text>
+            </a-entity>
+
+            <!-- GPS Marker 2: Floating Sphere -->
+            <a-entity
+                gps-entity-place="latitude: 37.7849; longitude: -122.4094"
+                class="gps-marker">
+                <a-sphere
+                    position="0 20 0"
+                    radius="5"
+                    material="color: #4ECDC4; emissive: #4ECDC4; emissiveIntensity: 0.3"
+                    animation="property: position; to: 0 25 0; dir: alternate; loop: true; dur: 3000">
+                </a-sphere>
+                <a-text
+                    value="GPS Sphere"
+                    position="0 30 0"
+                    align="center"
+                    color="#FFFFFF"
+                    scale="5 5 5">
+                </a-text>
+            </a-entity>
+
+            <!-- GPS Marker 3: Rotating Cube -->
+            <a-entity
+                gps-entity-place="latitude: 37.7649; longitude: -122.4294"
+                class="gps-marker">
+                <a-box
+                    position="0 10 0"
+                    width="8"
+                    height="8"
+                    depth="8"
+                    material="color: #45B7D1; metalness: 0.3"
+                    animation="property: rotation; to: 360 360 360; loop: true; dur: 5000">
+                </a-box>
+                <a-text
+                    value="GPS Cube"
+                    position="0 20 0"
+                    align="center"
+                    color="#FFFFFF"
+                    scale="5 5 5">
+                </a-text>
+            </a-entity>
+
+            <!-- GPS Marker 4: Particle System -->
+            <a-entity
+                gps-entity-place="latitude: 37.7549; longitude: -122.4394"
+                class="gps-marker">
+                <a-entity id="gps-particles">
+                    <a-sphere
+                        position="0 15 0"
+                        radius="3"
+                        material="color: #FFD93D; emissive: #FFD93D; emissiveIntensity: 0.5">
+                    </a-sphere>
+                    <a-sphere
+                        position="5 20 0"
+                        radius="2"
+                        material="color: #FF6B6B; emissive: #FF6B6B; emissiveIntensity: 0.3"
+                        animation="property: position; to: -5 25 0; dir: alternate; loop: true; dur: 4000">
+                    </a-sphere>
+                    <a-sphere
+                        position="-5 20 0"
+                        radius="2"
+                        material="color: #4ECDC4; emissive: #4ECDC4; emissiveIntensity: 0.3"
+                        animation="property: position; to: 5 25 0; dir: alternate; loop: true; dur: 4500">
+                    </a-sphere>
+                </a-entity>
+                <a-text
+                    value="GPS Particles"
+                    position="0 30 0"
+                    align="center"
+                    color="#FFFFFF"
+                    scale="5 5 5">
+                </a-text>
+            </a-entity>
+        </a-entity>
+
         <!-- Camera -->
-        <a-entity camera></a-entity>
+        <a-entity id="camera-entity" camera look-controls wasd-controls></a-entity>
     </a-scene>
 
     <!-- UI Overlay -->
     <div class="ui-overlay">
         <div class="header">
             <h1>AR.js Showcase</h1>
-            <button class="info-btn" onclick="toggleInfo()">ℹ️</button>
+            <div class="header-buttons">
+                <button class="mode-btn" id="mode-toggle" onclick="toggleARMode()">📍 GPS</button>
+                <button class="info-btn" onclick="toggleInfo()">ℹ️</button>
+            </div>
         </div>
         
         <div class="controls">
@@ -126,12 +226,20 @@
         
         <div class="status">
             <div class="status-item">
+                <span class="status-label">Mode:</span>
+                <span id="ar-mode" class="status-value">Marker</span>
+            </div>
+            <div class="status-item">
                 <span class="status-label">Tracking:</span>
                 <span id="tracking-status" class="status-value">Searching...</span>
             </div>
             <div class="status-item">
                 <span class="status-label">Markers:</span>
                 <span id="marker-count" class="status-value">0</span>
+            </div>
+            <div class="status-item" id="gps-status-item" style="display: none;">
+                <span class="status-label">GPS:</span>
+                <span id="gps-status" class="status-value">Disabled</span>
             </div>
         </div>
     </div>
@@ -148,14 +256,24 @@
                 <div class="marker-item">
                     <strong>Kanji Marker:</strong> 3D duck model on rotating platform + particle effects
                 </div>
+                <div class="marker-item">
+                    <strong>GPS Locations:</strong> Virtual objects placed at real-world coordinates
+                </div>
             </div>
             <div class="instructions">
-                <h3>Instructions:</h3>
+                <h3>Marker Mode Instructions:</h3>
                 <ul>
                     <li>Allow camera access when prompted</li>
                     <li>Point your camera at AR markers</li>
                     <li>Keep markers in view for best tracking</li>
                     <li>Use good lighting for optimal results</li>
+                </ul>
+                <h3>GPS Mode Instructions:</h3>
+                <ul>
+                    <li>Enable location services when prompted</li>
+                    <li>Go outdoors for better GPS accuracy</li>
+                    <li>Objects appear at specific coordinates</li>
+                    <li>Walk around to discover GPS markers</li>
                 </ul>
             </div>
             <button class="close-btn" onclick="toggleInfo()">Close</button>

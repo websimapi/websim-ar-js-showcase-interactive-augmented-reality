@@ -2,17 +2,24 @@
 let trackingStatus = false;
 let markerCount = 0;
 let isInfoPanelOpen = false;
+let isGPSMode = false;
+let gpsInitialized = false;
 
 // DOM elements
 const loadingScreen = document.getElementById('loading-screen');
 const infoPanel = document.getElementById('info-panel');
 const trackingStatusElement = document.getElementById('tracking-status');
 const markerCountElement = document.getElementById('marker-count');
+const arModeElement = document.getElementById('ar-mode');
+const gpsStatusElement = document.getElementById('gps-status');
+const gpsStatusItem = document.getElementById('gps-status-item');
+const modeToggleBtn = document.getElementById('mode-toggle');
 
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
     initializeAR();
     setupEventListeners();
+    checkGeolocationSupport();
 });
 
 function initializeAR() {
@@ -55,6 +62,114 @@ function initializeAR() {
     });
 }
 
+function checkGeolocationSupport() {
+    if ("geolocation" in navigator) {
+        console.log("Geolocation is supported");
+        updateGPSStatus('Available', 'success');
+    } else {
+        console.log("Geolocation is not supported");
+        updateGPSStatus('Not Supported', 'error');
+        modeToggleBtn.disabled = true;
+    }
+}
+
+function initializeGPS() {
+    if (gpsInitialized) return;
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            console.log('GPS position obtained:', position.coords);
+            updateGPSStatus('Active', 'success');
+            gpsInitialized = true;
+            
+            // Add GPS camera component
+            const camera = document.querySelector('#camera-entity');
+            camera.setAttribute('gps-camera', 'simulateLatitude: ' + position.coords.latitude + '; simulateLongitude: ' + position.coords.longitude);
+            
+            // Enable GPS markers
+            const gpsMarkers = document.querySelector('#gps-markers');
+            gpsMarkers.setAttribute('visible', 'true');
+            
+            console.log('GPS AR mode initialized');
+        },
+        (error) => {
+            console.error('GPS error:', error);
+            updateGPSStatus('Error', 'error');
+            
+            // Fallback to simulated GPS for demo
+            const camera = document.querySelector('#camera-entity');
+            camera.setAttribute('gps-camera', 'simulateLatitude: 37.7749; simulateLongitude: -122.4194');
+            
+            const gpsMarkers = document.querySelector('#gps-markers');
+            gpsMarkers.setAttribute('visible', 'true');
+            
+            updateGPSStatus('Simulated', 'warning');
+            gpsInitialized = true;
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+        }
+    );
+}
+
+function toggleARMode() {
+    const scene = document.querySelector('a-scene');
+    const camera = document.querySelector('#camera-entity');
+    const gpsMarkers = document.querySelector('#gps-markers');
+    const markers = document.querySelectorAll('a-marker');
+    
+    if (!isGPSMode) {
+        // Switch to GPS mode
+        isGPSMode = true;
+        modeToggleBtn.textContent = '🖼️ Marker';
+        arModeElement.textContent = 'GPS';
+        gpsStatusItem.style.display = 'flex';
+        
+        // Hide pattern markers
+        markers.forEach(marker => {
+            marker.setAttribute('visible', 'false');
+        });
+        
+        // Initialize GPS if not already done
+        if (!gpsInitialized) {
+            initializeGPS();
+        } else {
+            gpsMarkers.setAttribute('visible', 'true');
+        }
+        
+        // Update scene for GPS mode
+        scene.setAttribute('arjs', 'sourceType: webcam; locationBased: true; debugUIEnabled: false');
+        
+        updateStatus('GPS Mode', 'success');
+        console.log('Switched to GPS mode');
+    } else {
+        // Switch back to marker mode
+        isGPSMode = false;
+        modeToggleBtn.textContent = '📍 GPS';
+        arModeElement.textContent = 'Marker';
+        gpsStatusItem.style.display = 'none';
+        
+        // Show pattern markers
+        markers.forEach(marker => {
+            marker.setAttribute('visible', 'true');
+        });
+        
+        // Hide GPS markers
+        gpsMarkers.setAttribute('visible', 'false');
+        
+        // Remove GPS camera component
+        camera.removeAttribute('gps-camera');
+        
+        // Update scene for marker mode
+        scene.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3');
+        
+        updateStatus('Marker Mode', 'success');
+        console.log('Switched to marker mode');
+    }
+}
+
 function setupEventListeners() {
     // Handle window resize
     window.addEventListener('resize', function() {
@@ -80,6 +195,11 @@ function updateStatus(status, type) {
     setTimeout(() => {
         trackingStatusElement.style.animation = 'pulse 2s infinite';
     }, 10);
+}
+
+function updateGPSStatus(status, type) {
+    gpsStatusElement.textContent = status;
+    gpsStatusElement.className = `status-value ${type}`;
 }
 
 function updateMarkerCount() {
@@ -119,7 +239,16 @@ function resetTracking() {
     markerCount = 0;
     trackingStatus = false;
     updateMarkerCount();
-    updateStatus('Searching...', 'warning');
+    
+    if (isGPSMode) {
+        updateStatus('GPS Mode', 'success');
+        // Re-initialize GPS if needed
+        if (gpsInitialized) {
+            initializeGPS();
+        }
+    } else {
+        updateStatus('Searching...', 'warning');
+    }
     
     // Visual feedback
     const btn = event.target;
@@ -200,4 +329,3 @@ function addSmoothAnimations() {
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(addSmoothAnimations, 1000);
 });
-
